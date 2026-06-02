@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: library_mysql_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: library_db
+      MYSQL_USER: ronaldo_user
+      MYSQL_PASSWORD: library_password123
+      MYSQL_ROOT_PASSWORD: root_password123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  web:
+    build: .
+    container_name: library_django_backend
+    restart: always
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=db
+      - DB_NAME=library_db
+      - DB_USER=ronaldo_user
+      - DB_PASSWORD=library_password123
+    depends_on:
+      - db
+
+volumes:
+  mysql_data:

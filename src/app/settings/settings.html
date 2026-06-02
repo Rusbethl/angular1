@@ -1,0 +1,27 @@
+<app-layout>
+  <div class="max-w-2xl mx-auto space-y-6">
+    
+    <div class="border-b border-slate-200 pb-4">
+      <h2 class="text-3xl font-bold text-slate-900">Configuración</h2>
+      <p class="text-slate-500 mt-1">Ajusta las preferencias de tu cuenta y notificaciones.</p>
+    </div>
+
+    <div class="space-y-4">
+      
+      <app-settings-card
+        settingTitle="Notificaciones por correo"
+        settingDescription="Recibe resúmenes semanales de tus lecturas pendientes."
+        [isChecked]="true"
+        (toggleChange)="onSettingChanged('Notificaciones', $event)">
+      </app-settings-card>
+
+      <app-settings-card
+        settingTitle="Modo Privado"
+        settingDescription="Oculta tu perfil y biblioteca de otros usuarios."
+        [isChecked]="false"
+        (toggleChange)="onSettingChanged('Modo Privado', $event)">
+      </app-settings-card>
+
+    </div>
+  </div>
+</app-layout>
