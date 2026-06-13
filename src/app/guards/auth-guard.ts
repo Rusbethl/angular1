@@ -1,18 +1,24 @@
-import { inject } from '@angular/core';
+import { inject, PLATFORM_ID } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { isPlatformBrowser } from '@angular/common';
 
 export const authGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
-  
-  // Aquí va tu lógica para verificar si el usuario tiene acceso.
-  // Por ejemplo, checar si existe un token guardado:
-  const hasToken = typeof window !== 'undefined' && localStorage.getItem('token');
+  const platformId = inject(PLATFORM_ID);
 
-  if (hasToken) {
-    return true; // El usuario tiene permiso, lo dejamos pasar a 'explore'
-  } else {
-    // No tiene permiso, lo redirigimos a la ruta de 'login'
-    router.navigate(['/login']);
-    return false;
+  // 1. Verificamos si el código ya se está ejecutando en el navegador del usuario
+  if (isPlatformBrowser(platformId)) {
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+      return true; // Tienes el token, te dejamos entrar a Settings
+    } else {
+      router.navigate(['/login']); // No hay token, te regresamos al Login
+      return false;
+    }
   }
+
+  // 2. Si el código se está ejecutando en el servidor interno de Angular (SSR),
+  // devolvemos 'false' por seguridad. Esto evita que páginas privadas carguen sin login.
+  return false; 
 };
