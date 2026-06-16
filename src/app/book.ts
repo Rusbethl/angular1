@@ -2,12 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+
 export interface Book {
   id?: string | number; // El ID lo genera MySQL automáticamente
   title: string;
   author: string;
   category: string;
   status: string;
+  notes?: string;
 }
 
 @Injectable({

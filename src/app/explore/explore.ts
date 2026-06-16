@@ -1,4 +1,5 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core'; // <-- 1. Importamos ChangeDetectorRef
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core'; 
+import { CommonModule } from '@angular/common'; // <-- 1. Descomentado
 import { FormsModule } from '@angular/forms';
 import { Layout } from '../layout/layout';
 import { SearchBar } from '../search-bar/search-bar';
@@ -7,7 +8,7 @@ import { BookService, Book } from '../book';
 @Component({
   selector: 'app-explore',
   standalone: true,
-  imports: [Layout, SearchBar, FormsModule],
+  imports: [CommonModule, Layout, SearchBar, FormsModule], // <-- 2. Agregado CommonModule aquí
   templateUrl: './explore.html',
   styleUrl: './explore.css'
 })
@@ -19,7 +20,11 @@ export class Explore implements OnInit {
   newAuthor: string = '';
   newCategory: string = 'Ficción';
 
-  // <-- 2. Inyectamos 'cdr' en el constructor
+  // --- VARIABLES PARA EL MODAL DE APUNTES ---
+  isNotesModalOpen: boolean = false;
+  selectedBookForNotes: Book | null = null;
+  notesDraft: string = '';
+
   constructor(
     private bookService: BookService, 
     private cdr: ChangeDetectorRef 
@@ -34,7 +39,7 @@ export class Explore implements OnInit {
       next: (data) => {
         this.books = data;
         this.filteredBooks = [...this.books]; 
-        this.cdr.detectChanges(); // <-- Avisamos a la pantalla que redibuje los libros cargados
+        this.cdr.detectChanges(); 
       },
       error: (err) => {
         console.error('Error al cargar los libros desde el servidor:', err);
@@ -43,9 +48,7 @@ export class Explore implements OnInit {
   }
 
   onDelete(id: string | number | undefined) {
-    if (id === undefined) {
-      return; 
-    }
+    if (id === undefined) return; 
 
     this.bookService.deleteBook(id).subscribe({
       next: () => {
@@ -58,29 +61,25 @@ export class Explore implements OnInit {
   }
 
   onAddBook() {
-    if (this.newTitle.trim() === '' || this.newAuthor.trim() === '') {
-      return;
-    }
+    if (this.newTitle.trim() === '' || this.newAuthor.trim() === '') return;
 
     const newBookData = {
       title: this.newTitle,
       author: this.newAuthor,
       category: this.newCategory,
-      status: 'Pendiente'
+      status: 'Pendiente',
+      notes: '' // Inicializamos sin apuntes
     };
 
     this.bookService.addBook(newBookData).subscribe({
       next: (libroCreado) => {
-        // <-- 3. Creamos nuevas referencias de arreglos (ayuda a Angular a notar el cambio)
         this.books = [...this.books, libroCreado];
         this.filteredBooks = [...this.filteredBooks, libroCreado];
 
-        // Limpiamos el formulario
         this.newTitle = '';
         this.newAuthor = '';
         this.newCategory = 'Ficción';
         
-        // <-- 4. Forzamos la actualización visual inmediata en el HTML
         this.cdr.detectChanges(); 
       },
       error: (err) => {
@@ -90,9 +89,7 @@ export class Explore implements OnInit {
   }
 
   onToggleStatus(book: Book) {
-    if (book.id === undefined) {
-      return;
-    }
+    if (book.id === undefined) return;
 
     const newStatus = book.status === 'Pendiente' ? 'Leído' : 'Pendiente';
 
@@ -113,6 +110,38 @@ export class Explore implements OnInit {
       book.title.toLowerCase().includes(term) || 
       book.author.toLowerCase().includes(term)
     );
-    this.cdr.detectChanges(); // <-- Asegura que el filtrado de búsqueda también reaccione al instante
+    this.cdr.detectChanges(); 
+  }
+
+  // --- FUNCIONES DEL MODAL DE APUNTES ---
+
+  openNotes(book: Book) {
+    this.selectedBookForNotes = book;
+    
+    this.notesDraft = book.notes || ''; // Cargamos los apuntes previos o dejamos en blanco
+    this.isNotesModalOpen = true;
+    this.cdr.detectChanges(); // <-- 3. Agregado para que abra rápido
+  }
+
+  closeNotes() {
+    this.isNotesModalOpen = false;
+    this.selectedBookForNotes = null;
+    this.notesDraft = '';
+    this.cdr.detectChanges(); // <-- 4. Agregado para que cierre rápido
+  }
+
+  saveNotes() {
+    if (!this.selectedBookForNotes || this.selectedBookForNotes.id === undefined) return;
+
+    this.bookService.updateBook(this.selectedBookForNotes.id, { notes: this.notesDraft }).subscribe({
+      next: () => {
+        // Actualizamos visualmente el libro sin recargar todo
+        this.selectedBookForNotes!.notes = this.notesDraft;
+        this.closeNotes();
+      },
+      error: (err) => {
+        console.error('Error al guardar los apuntes:', err);
+      }
+    });
   }
 }
